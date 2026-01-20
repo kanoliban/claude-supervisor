@@ -1,6 +1,6 @@
 ---
 name: supervisor
-version: 2.0.0
+version: 2.1.0
 description: |
   Intent-based delegation to parallel Claude Code workers.
   Recognizes when tasks benefit from parallelization, background execution,
@@ -59,7 +59,34 @@ Are there sequential dependencies?
 
 ---
 
-## 2. Delegation Strategies
+## 2. Pre-Delegation Checks
+
+Before spawning workers, validate you're ready:
+
+### Plan Mode First
+Don't delegate unclear tasks. If you're unsure what workers should do, iterate in natural language first:
+
+```
+WRONG: "I think I need to fix auth... let me spawn some workers to look around"
+RIGHT: "Auth is broken because X. Workers should: [specific tasks]. Let me delegate."
+```
+
+**Check before delegating:**
+- [ ] Task is well-defined (not "figure it out")
+- [ ] Expected output is clear
+- [ ] Workers have all context they need (they start fresh)
+
+### Context Hygiene
+Each worker starts with clean context. This is a feature:
+- No stale information from earlier conversation
+- Focused on exactly what you send them
+- But YOU must include all necessary context in the prompt
+
+**Anti-pattern:** Assuming workers know what you discussed earlier. They don't.
+
+---
+
+## 3. Delegation Strategies
 
 ### PARALLEL — Multiple angles simultaneously
 
@@ -204,7 +231,7 @@ Worker 3 reviews with code + test results
 
 ---
 
-## 3. Orchestration Rules
+## 4. Orchestration Rules
 
 ### Spawning
 - Always spawn in the relevant project directory
@@ -232,7 +259,7 @@ Worker 3 reviews with code + test results
 
 ---
 
-## 4. Synthesis
+## 5. Synthesis
 
 After collecting worker results, synthesize before presenting:
 
@@ -255,7 +282,7 @@ After collecting worker results, synthesize before presenting:
 
 ---
 
-## 5. User-Facing Commands (Escape Hatch)
+## 6. User-Facing Commands (Escape Hatch)
 
 For explicit control when implicit recognition isn't desired:
 
@@ -285,7 +312,7 @@ Show which windows are Claude workers and their status (working/idle).
 
 ---
 
-## 6. Communication Style
+## 7. Communication Style
 
 ### When Delegating (tell user briefly)
 - "I'll search from multiple angles..." (PARALLEL)
@@ -305,7 +332,30 @@ Show which windows are Claude workers and their status (working/idle).
 
 ---
 
-## 7. Examples
+## 8. Common Patterns
+
+### Code Review via Delegation
+
+Use workers as reviewers. Effective prompts:
+
+```
+# Blast radius check (BACKGROUND)
+"Scan git diff on current branch. Confirm changes only affect [scope]. Flag anything outside."
+
+# Multi-angle review (PARALLEL)
+Worker 1: "Review for security issues"
+Worker 2: "Review for performance regressions"
+Worker 3: "Check pattern compliance against [reference files]"
+
+# Consensus review (REDUNDANT)
+Worker 1: "Review this PR with focus on correctness"
+Worker 2: "Review this PR with focus on maintainability"
+→ Compare: if both flag same issue, high confidence
+```
+
+---
+
+## 9. Examples
 
 ### Implicit Parallel
 ```
